@@ -1,0 +1,41 @@
+package com.github.gquintana.elasticsearch;
+
+import com.codahale.metrics.MetricRegistry;
+import org.junit.Test;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.*;
+
+public class TaskRunnerTest {
+    public static class TestTask extends Task {
+        private final AtomicInteger counter = new AtomicInteger();
+        public TestTask() {
+            super(null, null);
+        }
+
+        @Override
+        public void execute() {
+            counter.incrementAndGet();
+        }
+        public int getCounter() {
+            return counter.get();
+        }
+    }
+    @Test
+    public void testRun() throws Exception {
+        // Given
+        MetricRegistry metricRegistry = new MetricRegistry();
+        TaskRunner taskRunner = new TaskRunner(metricRegistry);
+        taskRunner.setThreadNumber(4);
+        taskRunner.setIterationNumber(10);
+        TestTask testTask = new TestTask();
+        // When
+        taskRunner.start();
+        taskRunner.run(testTask).get();
+        taskRunner.stop();
+        // Then
+        assertEquals(40, testTask.getCounter());
+        assertEquals(40, metricRegistry.getTimers().get(testTask.getClass().getName()+".timer").getCount());
+    }
+}
