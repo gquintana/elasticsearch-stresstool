@@ -1,9 +1,7 @@
 package com.github.gquintana.elasticsearch;
 
 import com.beust.jcommander.Parameter;
-import com.codahale.metrics.ConsoleReporter;
-import com.codahale.metrics.JmxReporter;
-import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.*;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -13,6 +11,9 @@ import org.elasticsearch.node.NodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,11 +41,16 @@ public abstract class Command {
     protected String docData;
     @Parameter(names = {"-dm", "--doc-template", "-qm", "--query-template"}, description = "Document/Query Mustache file")
     protected String docTemplate;
-    @Parameter(names = {"-m", "--metric-period"}, description = "Period in second for metric reporting")
+    @Parameter(names = {"-mp", "--metric-period"}, description = "Period in second for metric reporting")
     protected long metricPeriod = 10;
+    @Parameter(names = {"-mc", "--metric-console"}, description = "Output Console for metric reporting")
+    protected boolean metricConsole = false;
+    @Parameter(names = {"-mo", "--metric-output"}, description = "Output CSV file for metric reporting")
+    protected File metricOutput;
     @Parameter(names = {"--help"}, help = true)
     protected boolean help;
     private List<Runnable> stopCallbacks = new ArrayList<>();
+    private List<Reporter> metricReporters = new ArrayList<>();
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     protected Client createTransportClient() {
@@ -119,23 +125,44 @@ public abstract class Command {
             return csvDataProvider;
         }
     }
-
+    private void registerMetricReporter(Reporter reporter) {
+        metricReporters.add(reporter);
+    }
     protected MetricRegistry createMetricRegistry() {
         MetricRegistry metricRegistry = new MetricRegistry();
+        // JMX Reporter
         JmxReporter jmxReporter = JmxReporter.forRegistry(metricRegistry)
                 .inDomain(getClass().getPackage().getName())
                 .build();
         jmxReporter.start();
-        stopCallbacks.add(() ->{ jmxReporter.stop();});
-        ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(metricRegistry)
-                .build();
-        consoleReporter.start(metricPeriod, TimeUnit.SECONDS);
+        registerMetricReporter(jmxReporter);
+        // Console Reporter
+        if (metricConsole) {
+            ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(metricRegistry)
+                    .build();
+            consoleReporter.start(metricPeriod, TimeUnit.SECONDS);
+            registerMetricReporter(consoleReporter);
+        }
+        // CSV Reporter
+        if (metricOutput != null) {
+            metricOutput.mkdirs();
+            CsvReporter csvReporter = CsvReporter.forRegistry(metricRegistry)
+                    .build(metricOutput);
+            csvReporter.start(metricPeriod, TimeUnit.SECONDS);
+            registerMetricReporter(csvReporter);
+        }
         stopCallbacks.add(() -> {
-            consoleReporter.stop();
+            for(Reporter metricReporter:metricReporters) {
+                if (metricReporter instanceof Closeable) {
+                    try {
+                        ((Closeable) metricReporter).close();
+                    } catch (IOException e) {
+                    }
+                }
+            }
         });
         return metricRegistry;
     }
-
     protected abstract Task createTask();
 
     protected void closeTask(Task task) {
