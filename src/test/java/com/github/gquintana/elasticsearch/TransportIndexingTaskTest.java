@@ -44,7 +44,7 @@ public class TransportIndexingTaskTest {
 
     @AfterClass
     public static void tearDownClass() {
-        EmbeddedElasticsearch.node();
+        EmbeddedElasticsearch.close();
     }
 
 }
