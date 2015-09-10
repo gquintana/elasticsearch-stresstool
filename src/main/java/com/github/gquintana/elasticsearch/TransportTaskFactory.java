@@ -38,7 +38,9 @@ public class TransportTaskFactory extends TaskFactory {
         }
         parseHosts(9300)
                 .map((inetAddress) -> new InetSocketTransportAddress(inetAddress))
-                .forEach((inetAddress) -> transportClient.addTransportAddress(inetAddress));
+                .forEach((inetAddress) -> {
+                    transportClient.addTransportAddress(inetAddress);
+                });
 
         client = transportClient;
         return transportClient;

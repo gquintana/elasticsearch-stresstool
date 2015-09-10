@@ -5,6 +5,7 @@ import com.codahale.metrics.*;
 import com.github.gquintana.elasticsearch.data.ConstantDataProvider;
 import com.github.gquintana.elasticsearch.data.CsvDataProvider;
 import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.metric.LogStashJsonReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,7 @@ public abstract class Command {
     protected long metricPeriod = 10;
     @Parameter(names = {"-mc", "--metric-console"}, description = "Output Console for metric reporting")
     protected boolean metricConsole = false;
-    @Parameter(names = {"-mo", "--metric-output"}, description = "Output CSV file for metric reporting")
+    @Parameter(names = {"-mo", "--metric-output"}, description = "Output File for metric reporting, ending either .csv or .json")
     protected File metricOutput;
     @Parameter(names = {"--help"}, help = true)
     protected boolean help;
@@ -111,13 +112,21 @@ public abstract class Command {
             consoleReporter.start(metricPeriod, TimeUnit.SECONDS);
             registerMetricReporter(consoleReporter);
         }
-        // CSV Reporter
+        // CSV/JSON File Reporter
         if (metricOutput != null) {
-            metricOutput.mkdirs();
-            CsvReporter csvReporter = CsvReporter.forRegistry(metricRegistry)
-                    .build(metricOutput);
-            csvReporter.start(metricPeriod, TimeUnit.SECONDS);
-            registerMetricReporter(csvReporter);
+            String metricOutputName = metricOutput.getName().toLowerCase();
+            if (metricOutputName.endsWith(".csv")) {
+                metricOutput.mkdirs();
+                CsvReporter csvReporter = CsvReporter.forRegistry(metricRegistry)
+                        .build(metricOutput);
+                csvReporter.start(metricPeriod, TimeUnit.SECONDS);
+                registerMetricReporter(csvReporter);
+            } else if (metricOutputName.endsWith(".json")) {
+                LogStashJsonReporter jsonReporter = LogStashJsonReporter.forRegistry(metricRegistry)
+                        .build(metricOutput);
+                jsonReporter.start(metricPeriod, TimeUnit.SECONDS);
+                registerMetricReporter(jsonReporter);
+            }
         }
         stopCallbacks.add(() -> {
             for(Reporter metricReporter:metricReporters) {
