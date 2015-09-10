@@ -1,6 +1,7 @@
 package com.github.gquintana.elasticsearch;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 
 /**
@@ -18,7 +19,7 @@ public class TransportSearchingTask extends Task {
         Data data = provideData();
         SearchRequestBuilder searchRequest = client.prepareSearch(data.getIndices())
             .setTypes(data.getTypes()).setSource(data.getSource());
-        searchRequest.execute().actionGet();
+        SearchResponse searchResponse = searchRequest.execute().actionGet();
     }
 
     public Client getClient() {

@@ -7,9 +7,8 @@ import org.elasticsearch.client.Client;
 /**
  * Service to index using transport protocol
  */
-public class TransportIndexingTask extends Task {
+public class TransportIndexingTask extends IndexingTask {
     private final Client client;
-    private int bulkSize;
 
     public TransportIndexingTask(Client client, DataProvider dataProvider, TemplatingService templatingService) {
         super(dataProvider, templatingService);
@@ -23,23 +22,15 @@ public class TransportIndexingTask extends Task {
     }
 
     public void execute() {
-        if (bulkSize < 2) {
-            prepareIndex().execute().actionGet();
-        } else {
+        if (shouldBulkIndex()) {
             BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
             for (int i = 0; i < bulkSize; i++) {
                 bulkRequestBuilder.add(prepareIndex());
             }
             bulkRequestBuilder.execute().actionGet();
+        } else {
+            prepareIndex().execute().actionGet();
         }
-    }
-
-    public int getBulkSize() {
-        return bulkSize;
-    }
-
-    public void setBulkSize(int bulkSize) {
-        this.bulkSize = bulkSize;
     }
 
     public Client getClient() {

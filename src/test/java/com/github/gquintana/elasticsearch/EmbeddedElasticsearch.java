@@ -1,10 +1,16 @@
 package com.github.gquintana.elasticsearch;
 
-import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.count.CountResponse;
-import org.elasticsearch.action.delete.DeleteRequestBuilder;
+import io.searchbox.client.JestClient;
+import io.searchbox.client.JestClientFactory;
+import io.searchbox.client.config.HttpClientConfig;
+import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.transport.BoundTransportAddress;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
@@ -13,8 +19,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class EmbeddedElasticsearch {
+    public static final String NODE_NAME = "elasticsearch-node";
+    public static final String CLUSTER_NAME = "elasticsearch-cluster";
     private Node node;
+    private Integer nodeTransportPort;
+    private Integer nodeHttpPort;
     private Path path;
+    private JestClientFactory jestClientFactory;
     private static EmbeddedElasticsearch instance;
 
     public static EmbeddedElasticsearch getInstance() {
@@ -23,7 +34,16 @@ public class EmbeddedElasticsearch {
         }
         return instance;
     }
-
+    private static Integer getPort(BoundTransportAddress boundTransportAddress) {
+        TransportAddress transportAddress = boundTransportAddress.boundAddress();
+        Integer port;
+        if (transportAddress instanceof InetSocketTransportAddress) {
+            port = ((InetSocketTransportAddress) transportAddress).address().getPort();
+        } else {
+            port = null;
+        }
+        return port;
+    }
     public Node initNode() {
         if (node != null) {
             return node;
@@ -34,13 +54,22 @@ public class EmbeddedElasticsearch {
             Path pathLogs = Files.createDirectory(path.resolve("logs"));
 
             node = NodeBuilder.nodeBuilder()
-                    .clusterName("elasticsearch-cluster")
-                    .local(true)
+                    .clusterName(CLUSTER_NAME)
                     .settings(ImmutableSettings.builder()
-                            .put("node.name", "elasticsearch-node")
+                            .put("node.name", NODE_NAME)
+                            .put("network.host", "127.0.0.1")
+                            .put("http.enabled", true)
+                            .put("discovery.zen.ping.multicast.enabled", false)
                             .put("path.data", pathData.toAbsolutePath().toString())
                             .put("path.logs", pathLogs.toAbsolutePath().toString()))
                     .node();
+            try(Client client = node.client()) {
+                NodesInfoResponse nodeInfos = client.admin().cluster().prepareNodesInfo(NODE_NAME)
+                        .setHttp(true).setNetwork(true).execute().actionGet();
+                NodeInfo nodeInfo = nodeInfos.getAt(0);
+                nodeTransportPort = getPort(nodeInfo.getTransport().getAddress());
+                nodeHttpPort = getPort(nodeInfo.getHttp().address());
+            }
             return node;
         } catch (IOException e) {
             throw new EsStressToolException("Unable to initialize Elasticsearch", e);
@@ -55,6 +84,9 @@ public class EmbeddedElasticsearch {
     public static Client client() {
         return getInstance().initClient();
     }
+    public static JestClient jestClient() {
+        return getInstance().initJestClient();
+    }
     public static void refresh(String index) {
         client().admin().indices().prepareRefresh(index).execute().actionGet();
     }
@@ -62,7 +94,10 @@ public class EmbeddedElasticsearch {
         return client().prepareCount(index).execute().actionGet().getCount();
     }
     public static void delete(String index) {
-        client().admin().indices().prepareDelete(index).execute().actionGet();
+        try {
+            client().admin().indices().prepareDelete(index).execute().actionGet();
+        } catch (IndexMissingException e) {
+        }
     }
     public static void close() {
         getInstance().closeNode();
@@ -72,5 +107,22 @@ public class EmbeddedElasticsearch {
             node.close();
             node = null;
         }
+    }
+    public JestClient initJestClient() {
+        if (jestClientFactory == null) {
+            String uri = "http://127.0.0.1:" + getNodeHttpPort();
+            HttpClientConfig httpClientConfig = new HttpClientConfig.Builder(uri)
+                    .build();
+            jestClientFactory = new JestClientFactory();
+            jestClientFactory.setHttpClientConfig(httpClientConfig);
+        }
+        return jestClientFactory.getObject();
+    }
+
+    public Integer getNodeHttpPort() {
+        return nodeHttpPort;
+    }
+    public Integer getNodeTransportPort() {
+        return nodeTransportPort;
     }
 }

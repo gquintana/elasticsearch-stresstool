@@ -2,12 +2,6 @@ package com.github.gquintana.elasticsearch;
 
 import com.beust.jcommander.Parameter;
 import com.codahale.metrics.*;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +13,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public abstract class Command {
     @Parameter(names = {"-h", "--host"}, description = "Hosts and ports")
-    protected List<String> hosts = Arrays.asList("localhost:9300");
+    protected List<String> hosts = Arrays.asList("localhost");
     @Parameter(names = {"-c", "--cluster"}, description = "Cluster name")
     protected String clusterName;
     @Parameter(names = {"-x", "--protocol"}, description = "Protocol")
@@ -49,64 +41,37 @@ public abstract class Command {
     protected File metricOutput;
     @Parameter(names = {"--help"}, help = true)
     protected boolean help;
+    protected TaskFactory taskFactory;
     private List<Runnable> stopCallbacks = new ArrayList<>();
     private List<Reporter> metricReporters = new ArrayList<>();
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    protected Client createTransportClient() {
-        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
-        if (clusterName != null) {
-            settingsBuilder.put("cluster.name", clusterName);
+    protected TaskFactory createTaskFactory() {
+        if (taskFactory != null) {
+            return taskFactory;
         }
-        TransportClient transportClient = new TransportClient(settingsBuilder);
-        if (hosts.isEmpty()) {
-            throw new EsStressToolException("No host");
+        switch (protocol) {
+            case "transport":
+                taskFactory = new TransportTaskFactory(hosts, clusterName, true);
+                break;
+            case "node":
+                taskFactory = new TransportTaskFactory(hosts, clusterName, false);
+                break;
+            case "http":
+            case "jest":
+                taskFactory = new JestTaskFactory(hosts, clusterName);
+                break;
+            default:
+                throw new EsStressToolException("Unknown protocol " + protocol);
         }
-        Pattern hostPattern = Pattern.compile("([^:]+)(?::([0-9]+))");
-        for (String host : hosts) {
-            Matcher hostMatcher = hostPattern.matcher(host);
-            if (hostMatcher.matches()) {
-                String sHost = hostMatcher.group(1);
-                String sPort = hostMatcher.group(2);
-                int port = sPort == null ? 9300 : Integer.valueOf(sPort);
-                transportClient.addTransportAddress(new InetSocketTransportAddress(sHost, port));
-            } else {
-                throw new EsStressToolException("Invalid host " + host);
+        taskFactory.open();
+        stopCallbacks.add(() -> {
+            try {
+                taskFactory.close();
+            } catch (Exception e) {
             }
-        }
-        stopCallbacks.add(() -> transportClient.close());
-        return transportClient;
-    }
-
-    protected Client createNodeClient() {
-        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
-        if (clusterName != null) {
-            settingsBuilder.put("cluster.name", clusterName)
-                    .put("node.data", false)
-                    .put("node.master", false);
-        }
-        if (hosts == null || hosts.isEmpty()) {
-            settingsBuilder.put("discovery.zen.ping.multicast.enabled", true);
-        } else {
-            settingsBuilder.put("discovery.zen.ping.multicast.enabled", false);
-            settingsBuilder.put("discovery.zen.ping.unicast.hosts", hosts);
-        }
-        Node node = NodeBuilder.nodeBuilder().client(true)
-                .settings(settingsBuilder).node();
-        Client nodeClient= node.client();
-        stopCallbacks.add(() -> nodeClient.close());
-        stopCallbacks.add(() -> node.close());
-        return nodeClient;
-    }
-
-    protected Client createClient() {
-        if (protocol.equals("transport")) {
-            return createTransportClient();
-        } else if (protocol.equals("node")) {
-            return createNodeClient();
-        } else {
-            throw new EsStressToolException("Unknown protocol " + protocol);
-        }
+        });
+        return taskFactory;
     }
 
     protected DataProvider createDataProvider() {
@@ -165,7 +130,7 @@ public abstract class Command {
     }
     protected abstract Task createTask();
 
-    protected void closeTask(Task task) {
+    public void close() {
         for(Runnable stopCallback: stopCallbacks) {
             try {
                 stopCallback.run();
@@ -187,6 +152,110 @@ public abstract class Command {
         } catch (ExecutionException e) {
             logger.error("Command execution failed", e);
         }
-        closeTask(task);
+        close();
+    }
+
+    public List<String> getHosts() {
+        return hosts;
+    }
+
+    public void setHosts(List<String> hosts) {
+        this.hosts = hosts;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public int getThreads() {
+        return threads;
+    }
+
+    public void setThreads(int threads) {
+        this.threads = threads;
+    }
+
+    public int getIterations() {
+        return iterations;
+    }
+
+    public void setIterations(int iterations) {
+        this.iterations = iterations;
+    }
+
+    public String getDocIndex() {
+        return docIndex;
+    }
+
+    public void setDocIndex(String docIndex) {
+        this.docIndex = docIndex;
+    }
+
+    public String getDocType() {
+        return docType;
+    }
+
+    public void setDocType(String docType) {
+        this.docType = docType;
+    }
+
+    public String getDocData() {
+        return docData;
+    }
+
+    public void setDocData(String docData) {
+        this.docData = docData;
+    }
+
+    public String getDocTemplate() {
+        return docTemplate;
+    }
+
+    public void setDocTemplate(String docTemplate) {
+        this.docTemplate = docTemplate;
+    }
+
+    public long getMetricPeriod() {
+        return metricPeriod;
+    }
+
+    public void setMetricPeriod(long metricPeriod) {
+        this.metricPeriod = metricPeriod;
+    }
+
+    public boolean isMetricConsole() {
+        return metricConsole;
+    }
+
+    public void setMetricConsole(boolean metricConsole) {
+        this.metricConsole = metricConsole;
+    }
+
+    public File getMetricOutput() {
+        return metricOutput;
+    }
+
+    public void setMetricOutput(File metricOutput) {
+        this.metricOutput = metricOutput;
+    }
+
+    public boolean isHelp() {
+        return help;
+    }
+
+    public void setHelp(boolean help) {
+        this.help = help;
     }
 }

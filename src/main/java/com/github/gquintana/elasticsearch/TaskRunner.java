@@ -43,6 +43,7 @@ public class TaskRunner {
                 } catch (EsStressToolException internalExc) {
                     throw internalExc;
                 } catch (Exception e) {
+                    System.err.println(e.getMessage());
                     failCounter.inc();
                 }
             }

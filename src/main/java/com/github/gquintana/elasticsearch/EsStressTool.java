@@ -15,13 +15,26 @@ public class EsStressTool {
         commander.addCommand("search", searchCommand);
         commander.addCommand("help", new Object());
         commander.parse(args);
+        Command command = null;
         if (commander.getParsedCommand().equals("index")) {
-            indexCommand.execute();
+            command = indexCommand;
         } else if (commander.getParsedCommand().equals("search")) {
-            searchCommand.execute();
+            command = searchCommand;
         } else {
             commander.usage("index");
             commander.usage("search");
         }
+        if (command !=null) {
+            registerShutdownHook(command);
+            command.execute();
+        }
+    }
+    private static void registerShutdownHook(final Command command) {
+        Runtime.getRuntime().addShutdownHook(new Thread(){
+            @Override
+            public void run() {
+                command.close();
+            }
+        });
     }
 }
