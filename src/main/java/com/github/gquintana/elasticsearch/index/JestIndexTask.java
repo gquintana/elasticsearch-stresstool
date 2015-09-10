@@ -17,7 +17,6 @@ import java.io.IOException;
  */
 public class JestIndexTask extends IndexTask {
     private final JestClient client;
-    private int bulkSize;
 
     public JestIndexTask(JestClient client, DataProvider dataProvider, TemplatingService templatingService) {
         super(dataProvider, templatingService);
