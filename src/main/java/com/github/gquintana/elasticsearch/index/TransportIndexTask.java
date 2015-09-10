@@ -1,5 +1,8 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.index;
 
+import com.github.gquintana.elasticsearch.data.Data;
+import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
@@ -7,10 +10,10 @@ import org.elasticsearch.client.Client;
 /**
  * Service to index using transport protocol
  */
-public class TransportIndexingTask extends IndexingTask {
+public class TransportIndexTask extends IndexTask {
     private final Client client;
 
-    public TransportIndexingTask(Client client, DataProvider dataProvider, TemplatingService templatingService) {
+    public TransportIndexTask(Client client, DataProvider dataProvider, TemplatingService templatingService) {
         super(dataProvider, templatingService);
         this.client = client;
     }

@@ -1,5 +1,6 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.data;
 
+import com.github.gquintana.elasticsearch.Resources;
 import org.elasticsearch.common.mustache.DefaultMustacheFactory;
 import org.elasticsearch.common.mustache.Mustache;
 import org.elasticsearch.common.mustache.MustacheFactory;

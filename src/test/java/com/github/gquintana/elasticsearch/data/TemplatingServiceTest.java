@@ -1,7 +1,7 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.data;
 
+import com.github.gquintana.elasticsearch.Resources;
 import org.elasticsearch.common.io.ByteStreams;
-import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.junit.Rule;
 import org.junit.Test;
@@ -12,7 +12,7 @@ import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class TemplatingServiceTest {
     private TemplatingService service = new TemplatingService();
@@ -25,7 +25,7 @@ public class TemplatingServiceTest {
         templateParameters.put("id",123);
         templateParameters.put("title", "testRenderClasspath");
         // When
-        byte[] bytes = service.render(Resources.classResource(getClass(),"TemplatingServiceTest.mustache"), templateParameters);
+        byte[] bytes = service.render(Resources.classResource(getClass(), "TemplatingServiceTest.mustache"), templateParameters);
         Map<String, Object> map = JsonXContent.jsonXContent.createParser(bytes).mapAndClose();
         // Then
         assertEquals(123, map.get("id"));

@@ -1,5 +1,10 @@
 package com.github.gquintana.elasticsearch;
 
+import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
+import com.github.gquintana.elasticsearch.index.IndexTask;
+import com.github.gquintana.elasticsearch.index.TransportIndexTask;
+import com.github.gquintana.elasticsearch.search.TransportSearchTask;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -67,13 +72,13 @@ public class TransportTaskFactory extends TaskFactory {
         }
     }
 
-    public IndexingTask indexingTask(DataProvider dataProvider, TemplatingService templatingService) {
-        TransportIndexingTask indexingTask = new TransportIndexingTask(client, dataProvider, templatingService);
+    public IndexTask indexingTask(DataProvider dataProvider, TemplatingService templatingService) {
+        TransportIndexTask indexingTask = new TransportIndexTask(client, dataProvider, templatingService);
         return indexingTask;
     }
 
     public Task searchingTask(DataProvider dataProvider, TemplatingService templatingService) {
-        TransportSearchingTask searchingTask = new TransportSearchingTask(client, dataProvider, templatingService);
+        TransportSearchTask searchingTask = new TransportSearchTask(client, dataProvider, templatingService);
         return searchingTask;
     }
 

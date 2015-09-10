@@ -1,7 +1,7 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.index;
 
+import com.github.gquintana.elasticsearch.EmbeddedElasticsearch;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -10,9 +10,9 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Search integration test
+ * Index integration test
  */
-public class SearchCommandTest {
+public class IndexCommandTest {
     @BeforeClass
     public static void setUpClass() {
         EmbeddedElasticsearch.node();
@@ -21,56 +21,45 @@ public class SearchCommandTest {
     public static void tearDownClass() {
         EmbeddedElasticsearch.close();
     }
-
-    @Before
-    public void before() {
+    private IndexCommand createIndexCommand() {
         IndexCommand command = new IndexCommand();
-        EmbeddedElasticsearch.delete(command.getDocIndex());
         command.setClusterName(EmbeddedElasticsearch.CLUSTER_NAME);
-        command.setProtocol("transport");
-        command.setHosts(Arrays.asList("localhost:" + EmbeddedElasticsearch.getInstance().getNodeTransportPort()));
         command.setDocData("names");
         command.setDocTemplate("classpath:/com/github/gquintana/elasticsearch/doc-name.mustache");
-        command.setIterations(2);
-        command.setThreads(1);
-        command.setBulkSize(10);
-        command.execute();
-        command.close();
-        EmbeddedElasticsearch.refresh(command.getDocIndex());
-        assertEquals(20, EmbeddedElasticsearch.count(command.getDocIndex()));
-    }
-    private SearchCommand createSearchCommand() {
-        SearchCommand command = new SearchCommand();
-        command.setClusterName(EmbeddedElasticsearch.CLUSTER_NAME);
-        command.setDocData("names");
-        command.setDocTemplate("classpath:/com/github/gquintana/elasticsearch/query-name.mustache");
         command.setIterations(10);
         command.setThreads(2);
+        command.setBulkSize(5);
         return command;
     }
 
     @Test
     public void testExecuteTransport() {
         // Given
-        SearchCommand command = createSearchCommand();
+        IndexCommand command = createIndexCommand();
         command.setProtocol("transport");
         command.setHosts(Arrays.asList("localhost:" + EmbeddedElasticsearch.getInstance().getNodeTransportPort()));
+        EmbeddedElasticsearch.delete(command.getDocIndex());
         // When
         command.execute();
         command.close();
         // Then
+        EmbeddedElasticsearch.refresh(command.getDocIndex());
+        assertEquals(100, EmbeddedElasticsearch.count(command.getDocIndex()));
     }
 
     @Test
     public void testExecuteJest() {
         // Given
-        SearchCommand command = createSearchCommand();
+        IndexCommand command = createIndexCommand();
         command.setProtocol("jest");
         command.setHosts(Arrays.asList("localhost:" + EmbeddedElasticsearch.getInstance().getNodeHttpPort()));
+        EmbeddedElasticsearch.delete(command.getDocIndex());
         // When
         command.execute();
         command.close();
         // Then
+        EmbeddedElasticsearch.refresh(command.getDocIndex());
+        assertEquals(100, EmbeddedElasticsearch.count(command.getDocIndex()));
     }
 
 }

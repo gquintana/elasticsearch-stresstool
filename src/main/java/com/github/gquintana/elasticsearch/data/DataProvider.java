@@ -1,5 +1,6 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.data;
 
+import com.github.gquintana.elasticsearch.EsStressToolException;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 
 import java.io.IOException;

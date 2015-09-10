@@ -2,6 +2,9 @@ package com.github.gquintana.elasticsearch;
 
 import com.beust.jcommander.Parameter;
 import com.codahale.metrics.*;
+import com.github.gquintana.elasticsearch.data.ConstantDataProvider;
+import com.github.gquintana.elasticsearch.data.CsvDataProvider;
+import com.github.gquintana.elasticsearch.data.DataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

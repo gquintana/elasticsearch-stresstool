@@ -1,6 +1,8 @@
 package com.github.gquintana.elasticsearch;
 
 import com.beust.jcommander.JCommander;
+import com.github.gquintana.elasticsearch.index.IndexCommand;
+import com.github.gquintana.elasticsearch.search.SearchCommand;
 
 /**
  * Main class

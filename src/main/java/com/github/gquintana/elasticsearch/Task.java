@@ -1,5 +1,9 @@
 package com.github.gquintana.elasticsearch;
 
+import com.github.gquintana.elasticsearch.data.Data;
+import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
+
 public abstract class Task {
     private final DataProvider dataProvider;
     private final TemplatingService templatingService;

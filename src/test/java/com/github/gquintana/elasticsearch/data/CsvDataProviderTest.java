@@ -1,10 +1,12 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.data;
 
+import com.github.gquintana.elasticsearch.Resources;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-public class CsvIndexingDataProviderTest {
+public class CsvDataProviderTest {
     private void assertDataEquals(String index, String type, Integer id, String title, Data data) {
         assertEquals(index, data.getIndex());
         assertEquals(type, data.getType());
@@ -19,7 +21,7 @@ public class CsvIndexingDataProviderTest {
     @Test
     public void testProvideWithColumns() {
         // Given
-        CsvDataProvider provider = new CsvDataProvider(Resources.classResource(getClass(),"CsvIndexingDataProviderTest.csv"));
+        CsvDataProvider provider = new CsvDataProvider(Resources.classResource(getClass(), "CsvDataProviderTest.csv"));
         // When
         Data d1 = provider.provide();
         Data d2 = provider.provide();
@@ -34,7 +36,7 @@ public class CsvIndexingDataProviderTest {
     @Test
     public void testProvideWithoutColumns() {
         // Given
-        CsvDataProvider provider = new CsvDataProvider(Resources.classResource(getClass(),"CsvIndexingDataProviderTest.csv"));
+        CsvDataProvider provider = new CsvDataProvider(Resources.classResource(getClass(),"CsvDataProviderTest.csv"));
         provider.setIndexColumn("xIndex");
         provider.setTypeColumn("xType");
         provider.setIdColumn("xId");

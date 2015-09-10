@@ -1,12 +1,15 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.index;
 
+import com.github.gquintana.elasticsearch.EmbeddedElasticsearch;
+import com.github.gquintana.elasticsearch.data.ConstantDataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-public class TransportIndexingTaskTest {
+public class JestIndexTaskTest {
 
     @BeforeClass
     public static void setUpClass() {
@@ -18,7 +21,7 @@ public class TransportIndexingTaskTest {
         // Given
         TemplatingService templatingService = new TemplatingService();
         ConstantDataProvider dataProvider = new ConstantDataProvider("index", "type");
-        TransportIndexingTask service = new TransportIndexingTask(EmbeddedElasticsearch.client(), dataProvider, templatingService);
+        JestIndexTask service = new JestIndexTask(EmbeddedElasticsearch.jestClient(), dataProvider, templatingService);
         service.setBulkSize(10);
         // When
         service.execute();
@@ -33,7 +36,8 @@ public class TransportIndexingTaskTest {
         // Given
         TemplatingService templatingService = new TemplatingService();
         ConstantDataProvider dataProvider = new ConstantDataProvider("index", "type");
-        TransportIndexingTask service = new TransportIndexingTask(EmbeddedElasticsearch.client(), dataProvider, templatingService);
+        JestIndexTask service = new JestIndexTask(EmbeddedElasticsearch.jestClient(), dataProvider, templatingService);
+        EmbeddedElasticsearch.delete(".stresstool");
         // When
         service.execute();
         // Then

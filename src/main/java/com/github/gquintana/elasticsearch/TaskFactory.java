@@ -1,5 +1,9 @@
 package com.github.gquintana.elasticsearch;
 
+import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
+import com.github.gquintana.elasticsearch.index.IndexTask;
+
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -44,7 +48,7 @@ public abstract class TaskFactory implements AutoCloseable {
                 })
                 .filter((inetAddress) -> inetAddress != null);
     }
-    public abstract IndexingTask indexingTask(DataProvider dataProvider, TemplatingService templatingService);
+    public abstract IndexTask indexingTask(DataProvider dataProvider, TemplatingService templatingService);
 
     public abstract Task searchingTask(DataProvider dataProvider, TemplatingService templatingService);
 }

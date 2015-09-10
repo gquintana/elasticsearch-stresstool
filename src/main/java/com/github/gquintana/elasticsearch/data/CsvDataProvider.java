@@ -1,5 +1,7 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.data;
 
+import com.github.gquintana.elasticsearch.EsStressToolException;
+import com.github.gquintana.elasticsearch.Resources;
 import com.opencsv.CSVReader;
 
 import java.io.IOException;

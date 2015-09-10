@@ -1,11 +1,12 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.data;
 
+import com.github.gquintana.elasticsearch.Resources;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class ConstantIndexingDataProviderTest {
+public class ConstantDataProviderTest {
     private void assertDataEquals(String index, String type, Data data) {
         assertEquals(index, data.getIndex());
         assertEquals(type, data.getType());

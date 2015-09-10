@@ -1,4 +1,4 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.data;
 
 import java.util.Random;
 

@@ -1,6 +1,12 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.search;
 
 
+import com.github.gquintana.elasticsearch.JestException;
+import com.github.gquintana.elasticsearch.Jsons;
+import com.github.gquintana.elasticsearch.Task;
+import com.github.gquintana.elasticsearch.data.Data;
+import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
 import io.searchbox.client.JestClient;
 import io.searchbox.core.Search;
 import io.searchbox.core.SearchResult;
@@ -11,10 +17,10 @@ import java.util.Arrays;
 /**
  * Service to index using transport protocol
  */
-public class JestSearchingTask extends Task {
+public class JestSearchTask extends Task {
     private final JestClient client;
 
-    public JestSearchingTask(JestClient client, DataProvider dataProvider, TemplatingService templatingService) {
+    public JestSearchTask(JestClient client, DataProvider dataProvider, TemplatingService templatingService) {
         super(dataProvider, templatingService);
         this.client = client;
     }

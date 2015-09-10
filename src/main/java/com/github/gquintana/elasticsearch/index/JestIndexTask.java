@@ -1,5 +1,9 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.index;
 
+import com.github.gquintana.elasticsearch.JestException;
+import com.github.gquintana.elasticsearch.data.Data;
+import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
 import io.searchbox.action.Action;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestResult;
@@ -11,11 +15,11 @@ import java.io.IOException;
 /**
  * Service to index using HTTP protocol and Jest
  */
-public class JestIndexingTask extends IndexingTask {
+public class JestIndexTask extends IndexTask {
     private final JestClient client;
     private int bulkSize;
 
-    public JestIndexingTask(JestClient client, DataProvider dataProvider, TemplatingService templatingService) {
+    public JestIndexTask(JestClient client, DataProvider dataProvider, TemplatingService templatingService) {
         super(dataProvider, templatingService);
         this.client = client;
     }

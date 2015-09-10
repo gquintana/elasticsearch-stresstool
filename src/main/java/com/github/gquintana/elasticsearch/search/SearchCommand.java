@@ -1,4 +1,9 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.search;
+
+import com.github.gquintana.elasticsearch.Command;
+import com.github.gquintana.elasticsearch.Task;
+import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
 
 public class SearchCommand extends Command {
 

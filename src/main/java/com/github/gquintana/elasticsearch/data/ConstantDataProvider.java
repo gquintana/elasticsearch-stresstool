@@ -1,8 +1,5 @@
-package com.github.gquintana.elasticsearch;
+package com.github.gquintana.elasticsearch.data;
 
-/**
- * Created by gquintana on 30/07/15.
- */
 public class ConstantDataProvider extends DataProvider {
     private final String index;
     private final String type;

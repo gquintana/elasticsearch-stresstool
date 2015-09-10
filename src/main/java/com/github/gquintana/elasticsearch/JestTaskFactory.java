@@ -1,5 +1,10 @@
 package com.github.gquintana.elasticsearch;
 
+import com.github.gquintana.elasticsearch.data.DataProvider;
+import com.github.gquintana.elasticsearch.data.TemplatingService;
+import com.github.gquintana.elasticsearch.index.IndexTask;
+import com.github.gquintana.elasticsearch.index.JestIndexTask;
+import com.github.gquintana.elasticsearch.search.JestSearchTask;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestClientFactory;
 import io.searchbox.client.config.HttpClientConfig;
@@ -28,13 +33,13 @@ public class JestTaskFactory extends TaskFactory {
                 .build());
         client = factory.getObject();
     }
-    public IndexingTask indexingTask(DataProvider dataProvider, TemplatingService templatingService) {
-        JestIndexingTask indexingTask = new JestIndexingTask(client, dataProvider, templatingService);
+    public IndexTask indexingTask(DataProvider dataProvider, TemplatingService templatingService) {
+        JestIndexTask indexingTask = new JestIndexTask(client, dataProvider, templatingService);
         return indexingTask;
     }
 
     public Task searchingTask(DataProvider dataProvider, TemplatingService templatingService) {
-        JestSearchingTask searchingTask = new JestSearchingTask(client, dataProvider, templatingService);
+        JestSearchTask searchingTask = new JestSearchTask(client, dataProvider, templatingService);
         return searchingTask;
     }
 
