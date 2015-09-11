@@ -38,7 +38,9 @@ public class LogStashJsonReporter extends ScheduledReporter {
         reportMap(histograms, this::reportHistogram);
         reportMap(meters, this::reportMeter);
         reportMap(timers, this::reportTimer);
-        outputWriter.flush();
+        if (outputWriter !=null) {
+            outputWriter.flush();
+        }
     }
 
     private <T> void reportMap(SortedMap<String, T> map, BiConsumer<String, T> reportFunction) {

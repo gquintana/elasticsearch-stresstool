@@ -13,6 +13,7 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Task factory using native protocol
@@ -51,15 +52,18 @@ public class TransportTaskFactory extends TaskFactory {
         if (clusterName != null) {
             settingsBuilder.put("cluster.name", clusterName)
                     .put("node.data", false)
+                    .put("node.client", true)
                     .put("node.master", false);
         }
         if (hosts == null || hosts.isEmpty()) {
             settingsBuilder.put("discovery.zen.ping.multicast.enabled", true);
         } else {
             settingsBuilder.put("discovery.zen.ping.multicast.enabled", false);
-            settingsBuilder.put("discovery.zen.ping.unicast.hosts", hosts);
+            String sHosts = parseHosts(9300).map((inetAddress) -> inetAddress.getHostString() + ":" + inetAddress.getPort()).collect(Collectors.joining(","));
+            settingsBuilder.put("discovery.zen.ping.unicast.hosts", sHosts);
         }
-        node = NodeBuilder.nodeBuilder().client(true)
+        System.out.println(settingsBuilder.build().getAsMap().toString());
+        node = NodeBuilder.nodeBuilder()
                 .settings(settingsBuilder).node();
         Client nodeClient = node.client();
         client = nodeClient;

@@ -48,6 +48,21 @@ public class IndexCommandTest {
     }
 
     @Test
+    public void testExecuteNode() {
+        // Given
+        IndexCommand command = createIndexCommand();
+        command.setProtocol("node");
+        command.setHosts(Arrays.asList("localhost:" + EmbeddedElasticsearch.getInstance().getNodeTransportPort()));
+        EmbeddedElasticsearch.delete(command.getDocIndex());
+        // When
+        command.execute();
+        command.close();
+        // Then
+        EmbeddedElasticsearch.refresh(command.getDocIndex());
+        assertEquals(100, EmbeddedElasticsearch.count(command.getDocIndex()));
+    }
+
+    @Test
     public void testExecuteJest() {
         // Given
         IndexCommand command = createIndexCommand();
