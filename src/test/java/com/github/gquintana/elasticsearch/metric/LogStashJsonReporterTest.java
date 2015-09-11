@@ -42,7 +42,7 @@ public class LogStashJsonReporterTest {
             Map<String, Object> map = JsonXContent.jsonXContent.createParser(jsonIS).map();
             assertEquals(metricName, map.get("name"));
             assertEquals("timer", map.get("type"));
-            int counter = (Integer) map.get("counter");
+            int counter = (Integer) map.get("count");
             assertTrue(counter >= 10 && counter <= 20);
         }
     }
@@ -61,13 +61,14 @@ public class LogStashJsonReporterTest {
         for (int i = 0; i < 20; i++) {
             metricRegistry.counter(metricName).inc();
         }
+        Thread.sleep(2000L);
         jsonReporter.close();
         // Then
         try (FileInputStream jsonIS = new FileInputStream(jsonFile)) {
             Map<String, Object> map = JsonXContent.jsonXContent.createParser(jsonIS).map();
             assertEquals(metricName, map.get("name"));
-            assertEquals("timer", map.get("type"));
-            int counter = (Integer) map.get("counter");
+            assertEquals("counter", map.get("type"));
+            int counter = (Integer) map.get("count");
             assertTrue(counter >= 10 && counter <= 20);
         }
     }

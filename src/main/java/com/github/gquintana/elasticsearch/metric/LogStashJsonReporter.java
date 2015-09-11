@@ -153,13 +153,13 @@ public class LogStashJsonReporter extends ScheduledReporter {
 
     private void reportMeter(String name, Meter meter) {
         ReportBuilder reportBuilder = startReport(name, "meter")
-                .field("counter", meter.getCount());
+                .field("count", meter.getCount());
         reportMetered(reportBuilder, meter).end();
     }
 
     private void reportTimer(String name, Timer timer) {
         ReportBuilder reportBuilder = startReport(name, "timer")
-                .field("counter", timer.getCount());
+                .field("count", timer.getCount());
         reportMetered(reportBuilder, timer);
         reportSnapshot(reportBuilder, timer.getSnapshot())
                 .end();
