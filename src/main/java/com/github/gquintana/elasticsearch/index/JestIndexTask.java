@@ -1,6 +1,6 @@
 package com.github.gquintana.elasticsearch.index;
 
-import com.github.gquintana.elasticsearch.JestException;
+import com.github.gquintana.elasticsearch.*;
 import com.github.gquintana.elasticsearch.data.Data;
 import com.github.gquintana.elasticsearch.data.DataProvider;
 import com.github.gquintana.elasticsearch.data.TemplatingService;
@@ -9,8 +9,13 @@ import io.searchbox.client.JestClient;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.Bulk;
 import io.searchbox.core.Index;
+import io.searchbox.indices.CreateIndex;
+import io.searchbox.indices.DeleteIndex;
+import io.searchbox.indices.IndicesExists;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
 /**
  * Service to index using HTTP protocol and Jest
@@ -21,6 +26,41 @@ public class JestIndexTask extends IndexTask {
     public JestIndexTask(JestClient client, DataProvider dataProvider, TemplatingService templatingService) {
         super(dataProvider, templatingService);
         this.client = client;
+    }
+
+    @Override
+    public void prepare() {
+        JestResult result;
+        if (indexName != null) {
+            boolean indexExists = true;
+            try {
+                result = execute(new IndicesExists.Builder(indexName).build(), "Index exist");
+            } catch (JestResultException e) {
+                indexExists = e.getResult().getJsonObject().getAsJsonPrimitive("found").getAsBoolean();
+            }
+            if (indexExists && indexDelete) {
+                try {
+                    result = execute(new DeleteIndex.Builder(indexName).build(), "Delete index");
+                    indexExists = false;
+                } catch (JestResultException e) {
+                }
+            }
+            if (!indexExists) {
+                CreateIndex.Builder createIndex = new CreateIndex.Builder(indexName);
+                if (indexSettings != null) {
+                    try {
+                        try (InputStream indexSettingsIS = Resources.open(indexSettings)) {
+                            Map<String, Object> indexSettingsJson = Jsons.parseMap(indexSettingsIS);
+                            createIndex.settings(indexSettingsJson);
+                        }
+                    } catch (IOException e) {
+                        throw new EsStressToolException("Index creation failed", e);
+                    }
+                }
+                result = execute(createIndex.build(), "Create Index");
+            }
+        }
+        super.prepare();
     }
 
     private Index prepareIndex() {
@@ -42,14 +82,11 @@ public class JestIndexTask extends IndexTask {
         } else {
             action = prepareIndex();
         }
-        try {
-            JestResult indexResult = client.execute(action);
-            JestException.handleResult(indexResult, "Index failed");
-        } catch (IOException e) {
-            throw new JestException(e);
-        } catch (RuntimeException e) {
-            JestException.handleException(e);
-        }
+        JestResult indexResult = execute(action, "Index");
+    }
+
+    private <T extends JestResult> T execute(Action<T> action, String actionName) {
+        return Jests.execute(client, action, actionName);
     }
 
     public int getBulkSize() {

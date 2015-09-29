@@ -33,8 +33,9 @@ public class TaskRunner {
         @Override
         public void run() {
             running.set(true);
-            Timer timer = metricRegistry.timer(task.getClass().getName() + ".timer");
-            Counter failCounter = metricRegistry.counter(task.getClass().getName() + ".failure");
+            String taskName = task.getClass().getName();
+            Timer timer = metricRegistry.timer(taskName + ".timer");
+            Counter failCounter = metricRegistry.counter(taskName + ".failure");
             for (int j = 0; j < iterationNumber || !running.get(); j++) {
                 try {
                     Timer.Context context = timer.time();
@@ -56,6 +57,7 @@ public class TaskRunner {
     }
 
     public ListenableFuture<?> run(final Task task) {
+        task.prepare();
         List<ListenableFuture<?>> taskFutures = new ArrayList<>(threadNumber);
         for (int i = 0; i < threadNumber; i++) {
             taskFutures.add(executorService.submit(new TaskRunnable(task)));

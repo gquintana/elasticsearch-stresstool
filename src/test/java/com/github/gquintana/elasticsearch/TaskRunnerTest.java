@@ -5,21 +5,31 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class TaskRunnerTest {
     public static class TestTask extends Task {
-        private final AtomicInteger counter = new AtomicInteger();
+        private final AtomicInteger prepareCounter = new AtomicInteger();
+        private final AtomicInteger executeCounter = new AtomicInteger();
         public TestTask() {
             super(null, null);
         }
 
         @Override
-        public void execute() {
-            counter.incrementAndGet();
+        public void prepare() {
+            prepareCounter.incrementAndGet();
         }
-        public int getCounter() {
-            return counter.get();
+
+        @Override
+        public void execute() {
+            executeCounter.incrementAndGet();
+        }
+        public int getExecuteCounter() {
+            return executeCounter.get();
+        }
+
+        public int getPrepareCounter() {
+            return prepareCounter.get();
         }
     }
     @Test
@@ -35,7 +45,8 @@ public class TaskRunnerTest {
         taskRunner.run(testTask).get();
         taskRunner.stop();
         // Then
-        assertEquals(40, testTask.getCounter());
+        assertEquals(1, testTask.getPrepareCounter());
+        assertEquals(40, testTask.getExecuteCounter());
         assertEquals(40, metricRegistry.getTimers().get(testTask.getClass().getName()+".timer").getCount());
     }
 }

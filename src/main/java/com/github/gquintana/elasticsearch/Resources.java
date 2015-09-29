@@ -1,9 +1,6 @@
 package com.github.gquintana.elasticsearch;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,5 +30,16 @@ public class Resources {
             inputStream = new FileInputStream(resource);
         }
         return inputStream;
+    }
+    public static byte[] loadBytes(String resource) throws IOException {
+        try(InputStream inputStream=open(resource)) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int bufferLen;
+            while((bufferLen = inputStream.read(buffer)) >= 0 ) {
+                outputStream.write(buffer, 0, bufferLen);
+            }
+            return outputStream.toByteArray();
+        }
     }
 }

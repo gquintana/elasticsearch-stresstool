@@ -2,6 +2,7 @@ package com.github.gquintana.elasticsearch.search;
 
 
 import com.github.gquintana.elasticsearch.JestException;
+import com.github.gquintana.elasticsearch.Jests;
 import com.github.gquintana.elasticsearch.Jsons;
 import com.github.gquintana.elasticsearch.Task;
 import com.github.gquintana.elasticsearch.data.Data;
@@ -32,12 +33,9 @@ public class JestSearchTask extends Task {
                     .addIndex(Arrays.asList(data.getIndices()))
                     .addType(Arrays.asList(data.getTypes()))
                     .build();
-            SearchResult searchResult = client.execute(search);
-            JestException.handleResult(searchResult, "Search failed");
+            SearchResult searchResult = Jests.execute(client, search, "Search");
         } catch (IOException e) {
             throw new JestException(e);
-        } catch (RuntimeException e) {
-            JestException.handleException(e);
         }
     }
 

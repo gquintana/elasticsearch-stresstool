@@ -22,6 +22,17 @@ public abstract class Task {
         }
         return data;
     }
+
+    /**
+     * Called before all iterations
+     */
+    public void prepare() {
+
+    }
+
+    /**
+     * Called for each iteration
+     */
     public abstract void execute();
     public DataProvider getDataProvider() {
         return dataProvider;

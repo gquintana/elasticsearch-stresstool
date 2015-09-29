@@ -3,52 +3,13 @@ package com.github.gquintana.elasticsearch.index;
 import com.github.gquintana.elasticsearch.EmbeddedElasticsearch;
 import com.github.gquintana.elasticsearch.data.ConstantDataProvider;
 import com.github.gquintana.elasticsearch.data.TemplatingService;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
-public class JestIndexTaskTest {
-
-    @BeforeClass
-    public static void setUpClass() {
-        EmbeddedElasticsearch.node();
-    }
-
-    @Test
-    public void testExecuteBulk() {
-        // Given
+public class JestIndexTaskTest extends IndexTaskTest {
+    @Override
+    protected IndexTask createTask() {
         TemplatingService templatingService = new TemplatingService();
         ConstantDataProvider dataProvider = new ConstantDataProvider("index", "type");
-        JestIndexTask service = new JestIndexTask(EmbeddedElasticsearch.jestClient(), dataProvider, templatingService);
-        service.setBulkSize(10);
-        // When
-        service.execute();
-        // Then
-        EmbeddedElasticsearch.refresh("index");
-        assertEquals(10L, EmbeddedElasticsearch.count("index"));
-        EmbeddedElasticsearch.delete("index");
+        JestIndexTask task = new JestIndexTask(EmbeddedElasticsearch.jestClient(), dataProvider, templatingService);
+        return task;
     }
-
-    @Test
-    public void testExecuteOne() {
-        // Given
-        TemplatingService templatingService = new TemplatingService();
-        ConstantDataProvider dataProvider = new ConstantDataProvider("index", "type");
-        JestIndexTask service = new JestIndexTask(EmbeddedElasticsearch.jestClient(), dataProvider, templatingService);
-        EmbeddedElasticsearch.delete(".stresstool");
-        // When
-        service.execute();
-        // Then
-        EmbeddedElasticsearch.refresh("index");
-        assertEquals(1L, EmbeddedElasticsearch.count("index"));
-        EmbeddedElasticsearch.delete("index");
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-        EmbeddedElasticsearch.close();
-    }
-
 }
