@@ -11,15 +11,25 @@ import org.elasticsearch.common.util.concurrent.MoreExecutors;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TaskRunner implements AutoCloseable {
     private int threadNumber;
     private int iterationNumber;
+    private Long executePeriodMs;
+    private Long startPeriodNs;
     private ListeningExecutorService executorService;
     private final MetricRegistry metricRegistry;
     public TaskRunner(MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
+    }
+
+    private static void sleepPeriod(long durationNs, Long periodMs) throws InterruptedException{
+        long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNs);
+        if (periodMs != null && durationNs < periodMs) {
+            Thread.sleep(periodMs - durationMs);
+        }
     }
 
     private class TaskRunnable implements Runnable {
@@ -40,9 +50,11 @@ public class TaskRunner implements AutoCloseable {
                 try {
                     Timer.Context context = timer.time();
                     task.execute();
-                    context.stop();
+                    sleepPeriod(context.stop(), executePeriodMs);
                 } catch (EsStressToolException internalExc) {
                     throw internalExc;
+                } catch(InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } catch (Exception e) {
                     System.err.println(e.getMessage());
                     failCounter.inc();
@@ -59,10 +71,17 @@ public class TaskRunner implements AutoCloseable {
     public ListenableFuture<?> run(final Task task) {
         task.prepare();
         List<ListenableFuture<?>> taskFutures = new ArrayList<>(threadNumber);
-        for (int i = 0; i < threadNumber; i++) {
-            taskFutures.add(executorService.submit(new TaskRunnable(task)));
+        try {
+            for (int i = 0; i < threadNumber; i++) {
+                long start = System.nanoTime();
+                taskFutures.add(executorService.submit(new TaskRunnable(task)));
+                sleepPeriod(System.nanoTime() - start, startPeriodNs);
+            }
+            return Futures.allAsList(taskFutures);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Futures.allAsList(taskFutures);
         }
-        return Futures.allAsList(taskFutures);
     }
 
     public void start() {
@@ -92,5 +111,21 @@ public class TaskRunner implements AutoCloseable {
 
     public void setIterationNumber(int iterationNumber) {
         this.iterationNumber = iterationNumber;
+    }
+
+    public Long getExecutePeriodMs() {
+        return executePeriodMs;
+    }
+
+    public void setExecutePeriodMs(Long executePeriodMs) {
+        this.executePeriodMs = executePeriodMs;
+    }
+
+    public Long getStartPeriodNs() {
+        return startPeriodNs;
+    }
+
+    public void setStartPeriodNs(Long startPeriodNs) {
+        this.startPeriodNs = startPeriodNs;
     }
 }

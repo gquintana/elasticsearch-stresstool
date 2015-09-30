@@ -29,6 +29,10 @@ public abstract class Command {
     protected int threads = Integer.min(32, Runtime.getRuntime().availableProcessors());
     @Parameter(names = {"-n", "--iterations"}, description = "Iterations")
     protected int iterations =  10000;
+    @Parameter(names = {"-ep", "--execute-period-ms"}, description = "Period in ms between each execution")
+    protected Long executePeriodMs;
+    @Parameter(names = {"-sp", "--start-period-ms"}, description = "Period in ms between each thread start")
+    protected Long startPeriodMs;
     @Parameter(names = {"-di", "--doc-index", "--index"}, description = "Index")
     protected String docIndex = ".stresstest";
     @Parameter(names = {"-dt", "--doc-type"}, description = "Document type")
@@ -155,6 +159,8 @@ public abstract class Command {
         TaskRunner taskRunner = new TaskRunner(metricRegistry);
         taskRunner.setThreadNumber(threads);
         taskRunner.setIterationNumber(iterations);
+        taskRunner.setExecutePeriodMs(executePeriodMs);
+        taskRunner.setStartPeriodNs(executePeriodMs);
         taskRunner.start();
         registerCloseable(taskRunner);
         Task task = createTask();
