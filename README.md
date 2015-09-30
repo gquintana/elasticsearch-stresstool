@@ -33,19 +33,37 @@ esstresstool search -h localhost:9300 -c my_cluster \
 
 ## Options
 
-| Option   | Default  | Description |
+### Common options
+
+| Option   | Description | Default |
 |----------|----------|-------------|
-| -h, --host  | localhost:9300  | Hosts and ports of the Elasticsearch cluster |
-| -c, --cluster  |   | Cluster name  |
-| -x, --protocol | transport  | How to connect to Elasticsearch cluster: `transport`, `node`  |
-| -b, --bulk-size | 1  | Use a value greater than one to do bulk insert |
-| -di, --doc-index, --index  | `.esstresstool`  | Target index or indices  |
-| -dt, --doc-type  |   | Document type or types  |
-| -n, --iterations  |    | Number of iterations for each thread  |
-| -t, --thread  | Number of processors| Number of threads  |
-| -dd, --doc-data, -qd, --query-data |   | CSV file used to inject data. Can be omitted to have constant data. `names` value gives gives the liste of Marvel super heroes  |
-| -dm, --doc-template, -qm, --query-template  |     | A Mustache template used to generate Documents or Queries. Can be omitted to use data has documents. |
-|  -m, --metric-period  |  10  | Period in second for metric reporting  | 
+| --help  | Print help | |
+| -x, --protocol | Protocol, either node, transport, jest, http | transport |
+| -h, --host | Hosts and ports | localhost |
+| -c, --cluster | Cluster name | |
+| -t, --thread | Thread number | Number of CPUs  |
+| -sp, --start-period-ms | Period in ms between each thread start |  |
+| -ep, --execute-period-ms | Period in ms between each execution | |
+| -n, --iterations | Number of iterations of each thread | 10000 |
+| -di, --doc-index, --index | Default Index name | .stresstest |
+| -dt, --doc-type | Default Document type | stress | 
+| -dd, --doc-data, -qd, --query-data | Document/Query data CSV file |  | 
+| -dm, --doc-template, -qm, --query-template | Document/Query Mustache file |  |
+| -mc, --metric-console | Output Console for metric reporting | false |
+| -mo, --metric-output | Output File for metric reporting, ending either .csv or .json | |
+| -mp, --metric-period-ms | Period in second for metric reporting | 10000 |
+
+### Index options
+
+| Option   | Description | Default |
+|----------|----------|-------------|
+| -b, --bulk-size | Bulk size, 1 to disable bulk | |
+| -did, --doc-index-delete | Index delete at startup | false |
+| -dis, --doc-index-settings, --index-settings | Index settings for creation at startup | |
+
+### Search options
+
+Nothing at the moment
 
 ## Files
 

@@ -41,8 +41,8 @@ public abstract class Command {
     protected String docData;
     @Parameter(names = {"-dm", "--doc-template", "-qm", "--query-template"}, description = "Document/Query Mustache file")
     protected String docTemplate;
-    @Parameter(names = {"-mp", "--metric-period"}, description = "Period in second for metric reporting")
-    protected long metricPeriod = 10;
+    @Parameter(names = {"-mp", "--metric-period-ms"}, description = "Period in ms for metric reporting")
+    protected long metricPeriodMs = 10000;
     @Parameter(names = {"-mc", "--metric-console"}, description = "Output Console for metric reporting")
     protected boolean metricConsole = false;
     @Parameter(names = {"-mo", "--metric-output"}, description = "Output File for metric reporting, ending either .csv or .json")
@@ -113,7 +113,7 @@ public abstract class Command {
                     .withLoggingLevel(Slf4jReporter.LoggingLevel.INFO)
                     .outputTo(logger)
                     .build();
-            slf4jReporter.start(metricPeriod, TimeUnit.SECONDS);
+            slf4jReporter.start(metricPeriodMs, TimeUnit.MILLISECONDS);
             registerMetricReporter(slf4jReporter);
         }
         // CSV/JSON File Reporter
@@ -123,12 +123,12 @@ public abstract class Command {
                 metricOutput.mkdirs();
                 CsvReporter csvReporter = CsvReporter.forRegistry(metricRegistry)
                         .build(metricOutput);
-                csvReporter.start(metricPeriod, TimeUnit.SECONDS);
+                csvReporter.start(metricPeriodMs, TimeUnit.MILLISECONDS);
                 registerMetricReporter(csvReporter);
             } else if (metricOutputName.endsWith(".json")) {
                 LogStashJsonReporter jsonReporter = LogStashJsonReporter.forRegistry(metricRegistry)
                         .build(metricOutput);
-                jsonReporter.start(metricPeriod, TimeUnit.SECONDS);
+                jsonReporter.start(metricPeriodMs, TimeUnit.MILLISECONDS);
                 registerMetricReporter(jsonReporter);
             }
         }
@@ -251,12 +251,12 @@ public abstract class Command {
         this.docTemplate = docTemplate;
     }
 
-    public long getMetricPeriod() {
-        return metricPeriod;
+    public long getMetricPeriodMs() {
+        return metricPeriodMs;
     }
 
-    public void setMetricPeriod(long metricPeriod) {
-        this.metricPeriod = metricPeriod;
+    public void setMetricPeriodMs(long metricPeriodMs) {
+        this.metricPeriodMs = metricPeriodMs;
     }
 
     public boolean isMetricConsole() {
