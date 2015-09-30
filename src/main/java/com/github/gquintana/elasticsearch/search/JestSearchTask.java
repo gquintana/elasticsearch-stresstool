@@ -4,7 +4,6 @@ package com.github.gquintana.elasticsearch.search;
 import com.github.gquintana.elasticsearch.JestException;
 import com.github.gquintana.elasticsearch.Jests;
 import com.github.gquintana.elasticsearch.Jsons;
-import com.github.gquintana.elasticsearch.Task;
 import com.github.gquintana.elasticsearch.data.Data;
 import com.github.gquintana.elasticsearch.data.DataProvider;
 import com.github.gquintana.elasticsearch.data.TemplatingService;
@@ -16,9 +15,9 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * Service to index using transport protocol
+ * Service to search using HTTP protocol and Jest library
  */
-public class JestSearchTask extends Task {
+public class JestSearchTask extends SearchTask {
     private final JestClient client;
 
     public JestSearchTask(JestClient client, DataProvider dataProvider, TemplatingService templatingService) {
