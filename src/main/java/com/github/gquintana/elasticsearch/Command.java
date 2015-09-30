@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -46,10 +46,13 @@ public abstract class Command {
     @Parameter(names = {"--help"}, help = true)
     protected boolean help;
     protected TaskFactory taskFactory;
-    private List<Runnable> stopCallbacks = new ArrayList<>();
+    private List<AutoCloseable> closeables = new ArrayList<>();
     private List<Reporter> metricReporters = new ArrayList<>();
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private void registerCloseable(final AutoCloseable closeable) {
+        closeables.add(closeable);
+    }
     protected TaskFactory createTaskFactory() {
         if (taskFactory != null) {
             return taskFactory;
@@ -69,12 +72,7 @@ public abstract class Command {
                 throw new EsStressToolException("Unknown protocol " + protocol);
         }
         taskFactory.open();
-        stopCallbacks.add(() -> {
-            try {
-                taskFactory.close();
-            } catch (Exception e) {
-            }
-        });
+        registerCloseable(taskFactory);
         return taskFactory;
     }
 
@@ -107,10 +105,12 @@ public abstract class Command {
         registerMetricReporter(jmxReporter);
         // Console Reporter
         if (metricConsole) {
-            ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(metricRegistry)
+            Slf4jReporter slf4jReporter = Slf4jReporter.forRegistry(metricRegistry)
+                    .withLoggingLevel(Slf4jReporter.LoggingLevel.INFO)
+                    .outputTo(logger)
                     .build();
-            consoleReporter.start(metricPeriod, TimeUnit.SECONDS);
-            registerMetricReporter(consoleReporter);
+            slf4jReporter.start(metricPeriod, TimeUnit.SECONDS);
+            registerMetricReporter(slf4jReporter);
         }
         // CSV/JSON File Reporter
         if (metricOutput != null) {
@@ -128,35 +128,39 @@ public abstract class Command {
                 registerMetricReporter(jsonReporter);
             }
         }
-        stopCallbacks.add(() -> {
-            for(Reporter metricReporter:metricReporters) {
-                if (metricReporter instanceof Closeable) {
-                    try {
-                        ((Closeable) metricReporter).close();
-                    } catch (IOException e) {
-                    }
-                }
+        for(Reporter metricReporter:metricReporters) {
+            if (metricReporter instanceof Closeable) {
+                registerCloseable((Closeable) metricReporter);
             }
-        });
+            if (metricReporter instanceof ScheduledReporter) {
+                registerCloseable(() -> { ((ScheduledReporter) metricReporter).report(); });
+            }
+        }
         return metricRegistry;
     }
     protected abstract Task createTask();
 
     public void close() {
-        for(Runnable stopCallback: stopCallbacks) {
+        Collections.reverse(closeables);
+        for(AutoCloseable closeable: closeables) {
             try {
-                stopCallback.run();
+                closeable.close();
             } catch (Exception e) {
             }
         }
     }
 
     public void execute() {
-        TaskRunner taskRunner = new TaskRunner(createMetricRegistry());
+        MetricRegistry metricRegistry = createMetricRegistry();
+        TaskRunner taskRunner = new TaskRunner(metricRegistry);
         taskRunner.setThreadNumber(threads);
         taskRunner.setIterationNumber(iterations);
         taskRunner.start();
+        registerCloseable(taskRunner);
         Task task = createTask();
+        Timer timer = metricRegistry.timer(getClass().getName() + ".timer");
+        logger.info("{} threads, {} iterations, {}, starting", threads, iterations, task);
+        Timer.Context timerContext = timer.time();
         try {
             taskRunner.run(task).get();
         } catch (InterruptedException e) {
@@ -164,6 +168,8 @@ public abstract class Command {
         } catch (ExecutionException e) {
             logger.error("Command execution failed", e);
         }
+        long duration = timerContext.stop();
+        logger.info("{} threads, {} iterations, {}, {}, {}ms", threads, iterations, task, Times.formatForHuman(duration, TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS.toMillis(duration));
         close();
     }
 

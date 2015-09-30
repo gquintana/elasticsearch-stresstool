@@ -52,4 +52,8 @@ public abstract class IndexTask extends Task {
     public void setIndexSettings(String indexSettings) {
         this.indexSettings = indexSettings;
     }
+
+    public String toString() {
+        return shouldBulkIndex() ? bulkSize +" bulk index" : "index";
+    }
 }

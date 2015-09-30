@@ -19,8 +19,14 @@
     </appender>
     -->
     <!-- Loggers -->
+    <logger name="org.elasticsearch">
+        <level value="WARN" />
+    </logger>
+    <logger name="io.searchbox">
+        <level value="WARN" />
+    </logger>
     <root>
-        <priority value="INFO"/>
+        <level value="INFO"/>
         <appender-ref ref="console"/>
         <!--
         <appender-ref ref="file"/>

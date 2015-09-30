@@ -62,7 +62,6 @@ public class TransportTaskFactory extends TaskFactory {
             String sHosts = parseHosts(9300).map((inetAddress) -> inetAddress.getHostString() + ":" + inetAddress.getPort()).collect(Collectors.joining(","));
             settingsBuilder.put("discovery.zen.ping.unicast.hosts", sHosts);
         }
-        System.out.println(settingsBuilder.build().getAsMap().toString());
         node = NodeBuilder.nodeBuilder()
                 .settings(settingsBuilder).node();
         Client nodeClient = node.client();

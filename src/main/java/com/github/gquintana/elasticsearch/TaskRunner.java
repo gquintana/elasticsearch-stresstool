@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TaskRunner {
+public class TaskRunner implements AutoCloseable {
     private int threadNumber;
     private int iterationNumber;
     private ListeningExecutorService executorService;
@@ -71,6 +71,11 @@ public class TaskRunner {
 
     public void stop() {
         executorService.shutdownNow();
+    }
+
+    @Override
+    public void close() throws Exception {
+        stop();
     }
 
     public int getThreadNumber() {
