@@ -1,16 +1,23 @@
 package com.github.gquintana.elasticsearch;
 
+import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.Parameter;
 import com.codahale.metrics.*;
 import com.github.gquintana.elasticsearch.data.ConstantDataProvider;
 import com.github.gquintana.elasticsearch.data.CsvDataProvider;
 import com.github.gquintana.elasticsearch.data.DataProvider;
 import com.github.gquintana.elasticsearch.metric.LogStashJsonReporter;
+import org.elasticsearch.common.base.Strings;
+import org.elasticsearch.common.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.io.Console;
 import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +30,10 @@ public abstract class Command {
     protected List<String> hosts = Arrays.asList("localhost");
     @Parameter(names = {"-c", "--cluster"}, description = "Cluster name")
     protected String clusterName;
+    @Parameter(names = {"-u", "--user"}, description = "User name")
+    protected String userName;
+    @Parameter(names = {"-p", "--password"}, description = "Password or password file or password prompt", converter = PasswordStringConverter.class)
+    protected char[] password;
     @Parameter(names = {"-x", "--protocol"}, description = "Protocol")
     protected String protocol = "transport";
     @Parameter(names = {"-t", "--thread"}, description = "Thread number")
@@ -61,16 +72,17 @@ public abstract class Command {
         if (taskFactory != null) {
             return taskFactory;
         }
+        loadPassword();
         switch (protocol) {
             case "transport":
-                taskFactory = new TransportTaskFactory(hosts, clusterName, true);
+                taskFactory = new TransportTaskFactory(hosts, clusterName, userName, password, true);
                 break;
             case "node":
-                taskFactory = new TransportTaskFactory(hosts, clusterName, false);
+                taskFactory = new TransportTaskFactory(hosts, clusterName, userName, password, false);
                 break;
             case "http":
             case "jest":
-                taskFactory = new JestTaskFactory(hosts, clusterName);
+                taskFactory = new JestTaskFactory(hosts, clusterName, userName, password);
                 break;
             default:
                 throw new EsStressToolException("Unknown protocol " + protocol);
@@ -281,5 +293,47 @@ public abstract class Command {
 
     public void setHelp(boolean help) {
         this.help = help;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public char[] getPassword() {
+        return password;
+    }
+
+    public void setPassword(char[] password) {
+        this.password = password;
+    }
+
+    public void loadPassword() {
+        try {
+            if (password == null || password.length==0) {
+            } else if (Arrays.equals(password, "prompt".toCharArray())) {
+                Console console = System.console();
+                if (console != null) {
+                    password = console.readPassword("Password");
+                }
+            } else if (password[0] == '@') {
+                File passwordFile = new File(new String(password).substring(1));
+                byte[] bytes = Streams.copyToByteArray(passwordFile);
+                password = Charset.defaultCharset().decode(ByteBuffer.wrap(bytes)).array();
+            }
+            this.password = password == null || password.length == 0 ? null : password;
+            this.userName = Strings.emptyToNull(userName);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Invalid password", e);
+        }
+    }
+    public static class PasswordStringConverter implements IStringConverter<char[]> {
+        @Override
+        public char[] convert(String s) {
+            return s.toCharArray();
+        }
     }
 }

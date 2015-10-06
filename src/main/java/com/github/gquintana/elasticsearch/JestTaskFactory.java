@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
 public class JestTaskFactory extends TaskFactory {
     private JestClient client;
 
+    public JestTaskFactory(List<String> hosts, String clusterName, String userName, char[] password) {
+        super(hosts, clusterName, userName, password);
+    }
+
     public JestTaskFactory(List<String> hosts, String clusterName) {
         super(hosts, clusterName);
     }
@@ -27,10 +31,13 @@ public class JestTaskFactory extends TaskFactory {
                 .map((inetAddress) -> "http://" + inetAddress.getHostString() + ":" + inetAddress.getPort())
                 .collect(Collectors.toList());
         JestClientFactory factory = new JestClientFactory();
-        factory.setHttpClientConfig(new HttpClientConfig
+        HttpClientConfig.Builder httpClientConfigBuilder = new HttpClientConfig
                 .Builder(uris)
-                .multiThreaded(true)
-                .build());
+                .multiThreaded(true);
+        if (userName != null && password != null) {
+            httpClientConfigBuilder.defaultCredentials(userName, getPasswordAsString());
+        }
+        factory.setHttpClientConfig(httpClientConfigBuilder.build());
         client = factory.getObject();
     }
     public IndexTask indexingTask(DataProvider dataProvider, TemplatingService templatingService) {

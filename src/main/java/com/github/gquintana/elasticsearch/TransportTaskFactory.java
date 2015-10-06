@@ -23,6 +23,11 @@ public class TransportTaskFactory extends TaskFactory {
     private Node node;
     private Client client;
 
+    public TransportTaskFactory(List<String> hosts, String clusterName, String userName, char[] password, boolean transport) {
+        super(hosts, clusterName, userName, password);
+        this.transport = transport;
+    }
+
     public TransportTaskFactory(List<String> hosts, String clusterName, boolean transport) {
         super(hosts, clusterName);
         this.transport = transport;
@@ -33,6 +38,9 @@ public class TransportTaskFactory extends TaskFactory {
         if (clusterName != null) {
             settingsBuilder.put("cluster.name", clusterName);
         }
+        if (userName != null && password != null) {
+            settingsBuilder.put("shield.user", userName + ":" + (password == null ? "" : getPasswordAsString()));
+        }
         TransportClient transportClient = new TransportClient(settingsBuilder);
         if (hosts.isEmpty()) {
             throw new EsStressToolException("No host");
@@ -42,7 +50,6 @@ public class TransportTaskFactory extends TaskFactory {
                 .forEach((inetAddress) -> {
                     transportClient.addTransportAddress(inetAddress);
                 });
-
         client = transportClient;
         return transportClient;
     }
@@ -61,6 +68,9 @@ public class TransportTaskFactory extends TaskFactory {
             settingsBuilder.put("discovery.zen.ping.multicast.enabled", false);
             String sHosts = parseHosts(9300).map((inetAddress) -> inetAddress.getHostString() + ":" + inetAddress.getPort()).collect(Collectors.joining(","));
             settingsBuilder.put("discovery.zen.ping.unicast.hosts", sHosts);
+        }
+        if (userName != null && password != null) {
+            throw new IllegalArgumentException("user/password not support with node client");
         }
         node = NodeBuilder.nodeBuilder()
                 .settings(settingsBuilder).node();

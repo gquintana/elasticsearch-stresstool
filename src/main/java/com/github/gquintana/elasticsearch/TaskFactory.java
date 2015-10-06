@@ -16,10 +16,21 @@ import java.util.stream.Stream;
 public abstract class TaskFactory implements AutoCloseable {
     protected final List<String> hosts;
     protected final String clusterName;
+    protected final String userName;
+    protected final char[] password;
 
-    public TaskFactory(List<String> hosts, String clusterName) {
+    protected TaskFactory(List<String> hosts, String clusterName) {
+        this(hosts, clusterName, null, (char[]) null);
+    }
+    protected TaskFactory(List<String> hosts, String clusterName, String userName, String password) {
+        this(hosts, clusterName, userName, password.toCharArray());
+    }
+
+    protected TaskFactory(List<String> hosts, String clusterName, String userName, char[] password) {
         this.hosts = hosts;
         this.clusterName = clusterName;
+        this.userName = userName;
+        this.password = password;
     }
 
     public List<String> getHosts() {
@@ -51,4 +62,16 @@ public abstract class TaskFactory implements AutoCloseable {
     public abstract IndexTask indexingTask(DataProvider dataProvider, TemplatingService templatingService);
 
     public abstract Task searchingTask(DataProvider dataProvider, TemplatingService templatingService);
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public char[] getPassword() {
+        return password;
+    }
+
+    public String getPasswordAsString() {
+        return password == null ? null : new String(password);
+    }
 }
