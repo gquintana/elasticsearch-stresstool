@@ -36,6 +36,7 @@ public class LogStashJsonReporterTest {
             Thread.sleep(90L + random.nextInt(20));
             context.stop();
         }
+        Thread.sleep(2000L);
         jsonReporter.close();
         // Then
         try (FileInputStream jsonIS = new FileInputStream(jsonFile)) {
