@@ -322,7 +322,13 @@ public abstract class Command {
             } else if (password[0] == '@') {
                 File passwordFile = new File(new String(password).substring(1));
                 byte[] bytes = Streams.copyToByteArray(passwordFile);
-                password = Charset.defaultCharset().decode(ByteBuffer.wrap(bytes)).array();
+                char[] lPassword = Charset.defaultCharset().decode(ByteBuffer.wrap(bytes)).array();
+                int lastNullIndex = lPassword.length;
+                while(lastNullIndex > 0 && lPassword[lastNullIndex - 1] == '\u0000') {
+                    lastNullIndex--;
+                }
+                password = new char[lastNullIndex];
+                System.arraycopy(lPassword, 0, password, 0, lastNullIndex);
             }
             this.password = password == null || password.length == 0 ? null : password;
             this.userName = Strings.emptyToNull(userName);
