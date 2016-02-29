@@ -7,15 +7,12 @@ import com.github.gquintana.elasticsearch.data.ConstantDataProvider;
 import com.github.gquintana.elasticsearch.data.CsvDataProvider;
 import com.github.gquintana.elasticsearch.data.DataProvider;
 import com.github.gquintana.elasticsearch.metric.LogStashJsonReporter;
-import org.elasticsearch.common.base.Strings;
-import org.elasticsearch.common.io.Streams;
+import com.google.common.base.Strings;
+import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.Console;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -321,14 +318,17 @@ public abstract class Command {
                 }
             } else if (password[0] == '@') {
                 File passwordFile = new File(new String(password).substring(1));
-                byte[] bytes = Streams.copyToByteArray(passwordFile);
-                char[] lPassword = Charset.defaultCharset().decode(ByteBuffer.wrap(bytes)).array();
-                int lastNullIndex = lPassword.length;
-                while(lastNullIndex > 0 && lPassword[lastNullIndex - 1] == '\u0000') {
-                    lastNullIndex--;
+                byte[] bytes = null;
+                try(InputStream passwordIS = new FileInputStream(passwordFile)) {
+                    bytes = ByteStreams.toByteArray(passwordIS);
+                    char[] lPassword = Charset.defaultCharset().decode(ByteBuffer.wrap(bytes)).array();
+                    int lastNullIndex = lPassword.length;
+                    while(lastNullIndex > 0 && lPassword[lastNullIndex - 1] == '\u0000') {
+                        lastNullIndex--;
+                    }
+                    password = new char[lastNullIndex];
+                    System.arraycopy(lPassword, 0, password, 0, lastNullIndex);
                 }
-                password = new char[lastNullIndex];
-                System.arraycopy(lPassword, 0, password, 0, lastNullIndex);
             }
             this.password = password == null || password.length == 0 ? null : password;
             this.userName = Strings.emptyToNull(userName);

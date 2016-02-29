@@ -72,7 +72,7 @@ public class JestIndexTask extends IndexTask {
     }
 
     public void execute() {
-        Action action;
+        Action<? extends JestResult> action;
         if (shouldBulkIndex()) {
             Bulk.Builder bulkBuilder = new Bulk.Builder();
             for (int i = 0; i < bulkSize; i++) {

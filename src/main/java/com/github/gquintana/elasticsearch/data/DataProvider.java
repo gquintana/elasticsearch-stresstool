@@ -37,7 +37,7 @@ public abstract class DataProvider {
         templateParameters.putAll(indexingData.getSource());
         try {
             byte[] bytes = templatingService.render(templateLocation, templateParameters);
-            Map<String, Object> source = JsonXContent.jsonXContent.createParser(bytes).mapAndClose();
+            Map<String, Object> source = JsonXContent.jsonXContent.createParser(bytes).map();
             indexingData.clearSource();
             indexingData.setSource(source);
             return indexingData;

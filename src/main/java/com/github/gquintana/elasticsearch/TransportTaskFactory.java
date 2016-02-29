@@ -7,7 +7,7 @@ import com.github.gquintana.elasticsearch.index.TransportIndexTask;
 import com.github.gquintana.elasticsearch.search.TransportSearchTask;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
@@ -34,14 +34,16 @@ public class TransportTaskFactory extends TaskFactory {
     }
 
     private Client openTransportClient() {
-        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+        Settings.Builder settingsBuilder = Settings.builder();
         if (clusterName != null) {
             settingsBuilder.put("cluster.name", clusterName);
         }
         if (userName != null && password != null) {
             settingsBuilder.put("shield.user", userName + ":" + (password == null ? "" : getPasswordAsString()));
         }
-        TransportClient transportClient = new TransportClient(settingsBuilder);
+        TransportClient.Builder transportClientBuilder = TransportClient.builder()
+                .settings(settingsBuilder);
+        TransportClient transportClient = transportClientBuilder.build();
         if (hosts.isEmpty()) {
             throw new EsStressToolException("No host");
         }
@@ -55,12 +57,13 @@ public class TransportTaskFactory extends TaskFactory {
     }
 
     private Client openNodeClient() {
-        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+        Settings.Builder settingsBuilder = Settings.builder();
         if (clusterName != null) {
             settingsBuilder.put("cluster.name", clusterName)
                     .put("node.data", false)
                     .put("node.client", true)
-                    .put("node.master", false);
+                    .put("node.master", false)
+                    .put("path.home", System.getProperty("user.dir"));
         }
         if (hosts == null || hosts.isEmpty()) {
             settingsBuilder.put("discovery.zen.ping.multicast.enabled", true);

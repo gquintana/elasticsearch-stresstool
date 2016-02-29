@@ -6,11 +6,11 @@ import io.searchbox.client.config.HttpClientConfig;
 import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.indices.IndexMissingException;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
@@ -35,7 +35,7 @@ public class EmbeddedElasticsearch {
         return instance;
     }
     private static Integer getPort(BoundTransportAddress boundTransportAddress) {
-        TransportAddress transportAddress = boundTransportAddress.boundAddress();
+        TransportAddress transportAddress = boundTransportAddress.boundAddresses()[0];
         Integer port;
         if (transportAddress instanceof InetSocketTransportAddress) {
             port = ((InetSocketTransportAddress) transportAddress).address().getPort();
@@ -55,17 +55,15 @@ public class EmbeddedElasticsearch {
 
             node = NodeBuilder.nodeBuilder()
                     .clusterName(CLUSTER_NAME)
-                    .settings(ImmutableSettings.builder()
+                    .settings(Settings.builder()
                             .put("node.name", NODE_NAME)
-                            .put("network.host", "127.0.0.1")
-                            .put("http.enabled", true)
-                            .put("discovery.zen.ping.multicast.enabled", false)
+                            .put("path.home", path.toAbsolutePath().toString())
                             .put("path.data", pathData.toAbsolutePath().toString())
                             .put("path.logs", pathLogs.toAbsolutePath().toString()))
                     .node();
             try(Client client = node.client()) {
                 NodesInfoResponse nodeInfos = client.admin().cluster().prepareNodesInfo(NODE_NAME)
-                        .setHttp(true).setNetwork(true).execute().actionGet();
+                        .setHttp(true).setTransport(true).execute().actionGet();
                 NodeInfo nodeInfo = nodeInfos.getAt(0);
                 nodeTransportPort = getPort(nodeInfo.getTransport().getAddress());
                 nodeHttpPort = getPort(nodeInfo.getHttp().address());
@@ -96,7 +94,7 @@ public class EmbeddedElasticsearch {
     public static void delete(String index) {
         try {
             client().admin().indices().prepareDelete(index).execute().actionGet();
-        } catch (IndexMissingException e) {
+        } catch (IndexNotFoundException e) {
         }
     }
     public static void close() {
