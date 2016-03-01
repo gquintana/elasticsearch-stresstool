@@ -13,34 +13,39 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.junit.Assert.*;
 
 public class LogStashJsonReporterTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+    private static final int METRIC_NUMBER = 5;
+    private static final int METRIC_ITERATION = 5;
+    private static final long FILE_TIMEOUT = 5000L;
+
     private static void waitFileLines(File file, int nbLine, long timeoutMs) throws InterruptedException {
         Stopwatch stopwatch = Stopwatch.createStarted();
         int lineCount = 0;
-        while(stopwatch.elapsed(TimeUnit.MILLISECONDS) < timeoutMs) {
+        while (stopwatch.elapsed(TimeUnit.MILLISECONDS) < timeoutMs) {
             if (file.exists()) {
-                try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     String line;
-                    while((line = reader.readLine()) != null) {
-                        lineCount ++;
+                    while ((line = reader.readLine()) != null) {
+                        lineCount++;
                         if (lineCount >= nbLine) {
                             return;
                         }
                     }
-                } catch (IOException ioExc) {}
+                } catch (IOException ioExc) {
+                }
             }
             Thread.sleep(Math.max(timeoutMs / 10, 1000L));
         }
         stopwatch.stop();
-        fail("Not enough lines in file "+lineCount+" after "+stopwatch.elapsed(TimeUnit.MILLISECONDS));
+        fail("Not enough lines in file " + lineCount + " after " + stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
+
     @Test
     public void reportTimer() throws Exception {
         // Given
@@ -52,20 +57,22 @@ public class LogStashJsonReporterTest {
         // When
         String metricName = getClass().getName();
         Random random = new Random();
-        for (int i = 0; i < 20; i++) {
-            Timer.Context context = metricRegistry.timer(metricName).time();
-            Thread.sleep(90L + random.nextInt(20));
-            context.stop();
+        for (int i = 0; i < METRIC_ITERATION; i++) {
+            for (int j = 0; j < METRIC_NUMBER; j++) {
+                Timer.Context context = metricRegistry.timer(metricName + "." + j).time();
+                Thread.sleep(90L + random.nextInt(20));
+                context.stop();
+            }
         }
-        waitFileLines(jsonFile, 10, 10000L);
+        waitFileLines(jsonFile, METRIC_NUMBER * 2, FILE_TIMEOUT);
         jsonReporter.close();
         // Then
         try (FileInputStream jsonIS = new FileInputStream(jsonFile)) {
             Map<String, Object> map = JsonXContent.jsonXContent.createParser(jsonIS).map();
-            assertEquals(metricName, map.get("name"));
+            assertThat((String) map.get("name"), startsWith(metricName));
             assertEquals("timer", map.get("type"));
-            int counter = (Integer) map.get("count");
-            assertTrue(counter >= 10 && counter <= 20);
+            int count = (Integer) map.get("count");
+            assertTrue(count >1 && count <= METRIC_ITERATION);
         }
     }
 
@@ -80,18 +87,21 @@ public class LogStashJsonReporterTest {
         // When
         String metricName = getClass().getName();
         Random random = new Random();
-        for (int i = 0; i < 20; i++) {
-            metricRegistry.counter(metricName).inc();
+        for (int i = 0; i < METRIC_ITERATION; i++) {
+            for (int j = 0; j < METRIC_NUMBER; j++) {
+                metricRegistry.counter(metricName + "." + j).inc();
+            }
+            Thread.sleep(90L + random.nextInt(20));
         }
-        waitFileLines(jsonFile, 10, 10000L);
+        waitFileLines(jsonFile, METRIC_NUMBER * 2, FILE_TIMEOUT);
         jsonReporter.close();
         // Then
         try (FileInputStream jsonIS = new FileInputStream(jsonFile)) {
             Map<String, Object> map = JsonXContent.jsonXContent.createParser(jsonIS).map();
-            assertEquals(metricName, map.get("name"));
+            assertThat((String) map.get("name"), startsWith(metricName));
             assertEquals("counter", map.get("type"));
-            int counter = (Integer) map.get("count");
-            assertTrue(counter >= 10 && counter <= 20);
+            int count = (Integer) map.get("count");
+            assertTrue(count >1 && count <= METRIC_ITERATION);
         }
     }
 
