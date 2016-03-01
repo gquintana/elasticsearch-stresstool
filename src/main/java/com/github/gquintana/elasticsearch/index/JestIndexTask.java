@@ -36,7 +36,7 @@ public class JestIndexTask extends IndexTask {
             try {
                 result = execute(new IndicesExists.Builder(indexName).build(), "Index exist");
             } catch (JestResultException e) {
-                indexExists = e.getResult().getJsonObject().getAsJsonPrimitive("found").getAsBoolean();
+                indexExists = e.getResult().isSucceeded();
             }
             if (indexExists && indexDelete) {
                 try {
