@@ -89,7 +89,7 @@ public class EmbeddedElasticsearch {
         client().admin().indices().prepareRefresh(index).execute().actionGet();
     }
     public static long count(String index) {
-        return client().prepareCount(index).execute().actionGet().getCount();
+        return client().prepareSearch(index).setSize(0).execute().actionGet().getHits().getTotalHits();
     }
     public static void delete(String index) {
         try {
